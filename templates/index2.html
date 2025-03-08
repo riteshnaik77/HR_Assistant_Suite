@@ -1,0 +1,511 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Evaluator{% endblock %}
+
+{% block content %}
+<div class="row mb-4 justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Resume Evaluator</h2>
+            </div>
+            <div class="card-body">
+                <form id="evaluationForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="resume" class="form-label">Upload Resume (PDF, DOCX)</label>
+                        <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.docx" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="job_title" class="form-label">Job Title</label>
+                        <input type="text" class="form-control" id="job_title" name="job_title" 
+                               placeholder="e.g. Software Engineer, Data Scientist" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="job_description" class="form-label">Job Description</label>
+                        <textarea class="form-control" id="job_description" name="job_description" rows="6" 
+                                  placeholder="Paste the job description here..." required></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Evaluate Resume</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="evaluation-result" style="display: none;" class="mb-4">
+    <div class="card evaluation-card">
+        <div class="card-header">
+            <h3 class="mb-0">Evaluation Results</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Match Score Card -->
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="mb-0">Match Score</h4>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="progress mb-3" style="height: 30px;">
+                                <div id="progress-bar" class="progress-bar" role="progressbar" 
+                                     style="width: 0%;" aria-valuenow="0" aria-valuemin="0" 
+                                     aria-valuemax="100">0%</div>
+                            </div>
+                            <span id="match-score" class="fs-3 fw-bold">0%</span>
+                            
+                            <!-- Score Breakdown -->
+                            <div class="mt-3">
+                                <button class="btn btn-outline-primary btn-sm" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#scoreBreakdown">
+                                    View Score Breakdown
+                                </button>
+                                <div class="collapse mt-2" id="scoreBreakdown">
+                                    <div class="card card-body">
+                                        <div id="match-factors">
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1">Skills Match</label>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div id="skills-match" class="progress-bar" 
+                                                         role="progressbar" style="width: 0%;"></div>
+                                                </div>
+                                                <small class="text-muted" id="skills-match-score">0%</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1">Experience Match</label>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div id="experience-match" class="progress-bar" 
+                                                         role="progressbar" style="width: 0%;"></div>
+                                                </div>
+                                                <small class="text-muted" id="experience-match-score">0%</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1">Education Match</label>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div id="education-match" class="progress-bar" 
+                                                         role="progressbar" style="width: 0%;"></div>
+                                                </div>
+                                                <small class="text-muted" id="education-match-score">0%</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1">Industry Knowledge</label>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div id="industry-match" class="progress-bar" 
+                                                         role="progressbar" style="width: 0%;"></div>
+                                                </div>
+                                                <small class="text-muted" id="industry-match-score">0%</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1">Certification Match</label>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div id="certification-match" class="progress-bar" 
+                                                         role="progressbar" style="width: 0%;"></div>
+                                                </div>
+                                                <small class="text-muted" id="certification-match-score">0%</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Job Stability Card -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="mb-0">Job Stability</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="me-2">Stability Score:</span>
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div id="stability-score-bar" class="progress-bar" role="progressbar" 
+                                         style="width: 0%;" aria-valuenow="0" aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <span class="ms-2" id="stability-score">0</span>
+                            </div>
+                            <p><strong>Risk Level: </strong><span id="risk-level" class="badge">Unknown</span></p>
+                            <p><strong>Average Tenure: </strong><span id="average-tenure">Unknown</span></p>
+                            <p><strong>Job Count: </strong><span id="job-count">0</span></p>
+                            <div id="stability-explanation" class="alert alert-light mt-2">No stability data available</div>
+                        </div>
+                    </div>
+
+                    <!-- Career Progression Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0">Career Progression Analysis</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="me-2">Progression Score:</span>
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div id="progression-score-bar" class="progress-bar" role="progressbar" 
+                                         style="width: 0%;" aria-valuenow="0" aria-valuemin="0" 
+                                         aria-valuemax="100">0%</div>
+                                </div>
+                                <span class="ms-2" id="progression-score">0</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h5>Key Observations</h5>
+                                <ul id="key-observations" class="list-group"></ul>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h5>Career Path</h5>
+                                <div id="career-path" class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Company</th>
+                                                <th>Duration</th>
+                                                <th>Level</th>
+                                                <th>Progression</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="career-path-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h5>Red Flags</h5>
+                                <div id="red-flags" class="alert alert-warning"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h5>Analysis Reasoning</h5>
+                                <p id="progression-reasoning" class="text-muted"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="mb-0">Profile Summary</h4>
+                        </div>
+                        <div class="card-body">
+                            <p id="profile-summary" class="border p-3 rounded bg-light"></p>
+                            
+                            <h5 class="mt-4">Missing Keywords</h5>
+                            <div id="missing-keywords" class="p-3 border rounded bg-light d-flex flex-wrap gap-2"></div>
+                            
+                            <h5 class="mt-4">Additional Information</h5>
+                            <div id="extra-info" class="p-3 border rounded bg-light"></div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Questions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0">Interview Questions</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-tabs" id="questionsTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="quick-checks-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#quick-checks" type="button" role="tab" 
+                                            aria-controls="quick-checks" aria-selected="true">Quick Checks</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="soft-skills-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#soft-skills" type="button" role="tab" 
+                                            aria-controls="soft-skills" aria-selected="false">Soft Skills</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="technical-skills-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#technical-skills" type="button" role="tab" 
+                                            aria-controls="technical-skills" aria-selected="false">Skill Checks</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content mt-3" id="questionsTabContent">
+                                <div class="tab-pane fade show active" id="quick-checks" role="tabpanel" 
+                                     aria-labelledby="quick-checks-tab">
+                                    <ul id="quick-checks-questions" class="list-group"></ul>
+                                </div>
+                                <div class="tab-pane fade" id="soft-skills" role="tabpanel" 
+                                     aria-labelledby="soft-skills-tab">
+                                    <ul id="soft-skills-questions" class="list-group"></ul>
+                                </div>
+                                <div class="tab-pane fade" id="technical-skills" role="tabpanel" 
+                                     aria-labelledby="technical-skills-tab">
+                                    <ul id="technical-skills-questions" class="list-group"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feedback Section -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h4 class="mb-0">Provide Feedback</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="feedbackForm">
+                                <input type="hidden" id="evaluation-id" name="evaluation_id">
+                                <div class="mb-3">
+                                    <label for="rating" class="form-label">Rating (1-5)</label>
+                                    <div class="star-rating" id="star-rating">
+                                        <span class="star" data-value="1">★</span>
+                                        <span class="star" data-value="2">★</span>
+                                        <span class="star" data-value="3">★</span>
+                                        <span class="star" data-value="4">★</span>
+                                        <span class="star" data-value="5">★</span>
+                                    </div>
+                                    <input type="hidden" id="rating" name="rating" value="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comments" class="form-label">Comments</label>
+                                    <textarea class="form-control" id="comments" name="comments" rows="3" 
+                                              placeholder="Your feedback..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const evaluationForm = document.getElementById('evaluationForm');
+    const feedbackForm = document.getElementById('feedbackForm');
+    const resultDiv = document.getElementById('evaluation-result');
+    const submitBtn = document.getElementById('submitBtn');
+    let currentRating = 0;
+
+    // Star rating functionality
+    const starRating = document.getElementById('star-rating');
+    const stars = starRating.querySelectorAll('.star');
+    const ratingInput = document.getElementById('rating');
+
+    stars.forEach(star => {
+        star.addEventListener('mouseover', function() {
+            const value = parseInt(this.dataset.value);
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= value) {
+                    s.classList.add('selected');
+                } else {
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+
+    starRating.addEventListener('mouseout', function() {
+        stars.forEach(star => {
+            if (parseInt(star.dataset.value) <= currentRating) {
+                star.classList.add('selected');
+            } else {
+                star.classList.remove('selected');
+            }
+        });
+    });
+
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            currentRating = parseInt(this.dataset.value);
+            ratingInput.value = currentRating;
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= currentRating) {
+                    s.classList.add('selected');
+                } else {
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+
+    evaluationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Evaluating...';
+
+        const formData = new FormData(evaluationForm);
+
+        fetch('/evaluate', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+
+            // Display results
+            resultDiv.style.display = 'block';
+            
+            // Enhanced smooth scroll to results with a slight delay to ensure content is rendered
+            setTimeout(() => {
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+            // Match Score
+            document.getElementById('progress-bar').style.width = data.match_percentage + '%';
+            document.getElementById('progress-bar').textContent = data.match_percentage_str;
+            document.getElementById('match-score').textContent = data.match_percentage_str;
+
+            // Match Factors
+            const factors = data.match_factors;
+            document.getElementById('skills-match').style.width = factors['Skills Match'] + '%';
+            document.getElementById('skills-match-score').textContent = factors['Skills Match'] + '%';
+            document.getElementById('experience-match').style.width = factors['Experience Match'] + '%';
+            document.getElementById('experience-match-score').textContent = factors['Experience Match'] + '%';
+            document.getElementById('education-match').style.width = factors['Education Match'] + '%';
+            document.getElementById('education-match-score').textContent = factors['Education Match'] + '%';
+            document.getElementById('industry-match').style.width = factors['Industry Knowledge'] + '%';
+            document.getElementById('industry-match-score').textContent = factors['Industry Knowledge'] + '%';
+            document.getElementById('certification-match').style.width = factors['Certification Match'] + '%';
+            document.getElementById('certification-match-score').textContent = factors['Certification Match'] + '%';
+
+            // Job Stability
+            const stability = data.job_stability;
+            document.getElementById('stability-score-bar').style.width = stability.StabilityScore + '%';
+            document.getElementById('stability-score').textContent = stability.StabilityScore;
+            document.getElementById('risk-level').textContent = stability.RiskLevel;
+            document.getElementById('risk-level').className = 'badge bg-' + 
+                (stability.RiskLevel === 'Low' ? 'success' : stability.RiskLevel === 'Medium' ? 'warning' : 'danger');
+            document.getElementById('average-tenure').textContent = stability.AverageJobTenure;
+            document.getElementById('job-count').textContent = stability.JobCount;
+            document.getElementById('stability-explanation').textContent = stability.ReasoningExplanation;
+
+            // Career Progression Analysis
+            const progression = data.career_progression;
+            document.getElementById('progression-score-bar').style.width = progression.progression_score + '%';
+            document.getElementById('progression-score-bar').textContent = progression.progression_score + '%';
+            document.getElementById('progression-score').textContent = progression.progression_score;
+            
+            // Key Observations
+            const observationsList = document.getElementById('key-observations');
+            observationsList.innerHTML = progression.key_observations.map(obs => 
+                `<li class="list-group-item">${obs}</li>`
+            ).join('');
+            
+            // Career Path
+            const careerPathBody = document.getElementById('career-path-body');
+            careerPathBody.innerHTML = progression.career_path.map(job => `
+                <tr>
+                    <td>${job.title}</td>
+                    <td>${job.company}</td>
+                    <td>${job.duration}</td>
+                    <td><span class="badge bg-${getLevelColor(job.level)}">${job.level}</span></td>
+                    <td><span class="badge bg-${getProgressionColor(job.progression)}">${job.progression}</span></td>
+                </tr>
+            `).join('');
+            
+            // Red Flags
+            const redFlagsDiv = document.getElementById('red-flags');
+            redFlagsDiv.innerHTML = progression.red_flags.length > 0 
+                ? progression.red_flags.map(flag => `<div>⚠️ ${flag}</div>`).join('')
+                : '<div class="text-success">No significant red flags detected</div>';
+            
+            // Reasoning
+            document.getElementById('progression-reasoning').textContent = progression.reasoning;
+
+            // Profile Summary and Other Info
+            document.getElementById('profile-summary').textContent = data.profile_summary;
+            document.getElementById('missing-keywords').innerHTML = data.missing_keywords.length > 0 
+                ? data.missing_keywords.map(kw => `<span class="badge bg-warning text-dark">${kw}</span>`).join('') 
+                : '<span class="text-success">No missing keywords</span>';
+            document.getElementById('extra-info').textContent = data.extra_info || 'No additional information provided.';
+
+            // Interview Questions
+            const quickChecksList = document.getElementById('quick-checks-questions');
+            quickChecksList.innerHTML = data.behavioral_questions.map(q => 
+                `<li class="list-group-item">${q}</li>`
+            ).join('');
+            const softSkillsList = document.getElementById('soft-skills-questions');
+            softSkillsList.innerHTML = data.nontechnical_questions.map(q => 
+                `<li class="list-group-item">${q}</li>`
+            ).join('');
+            const techSkillsList = document.getElementById('technical-skills-questions');
+            techSkillsList.innerHTML = data.technical_questions.map(q => 
+                `<li class="list-group-item">${q}</li>`
+            ).join('');
+
+            // Set evaluation ID for feedback
+            document.getElementById('evaluation-id').value = data.id;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while evaluating the resume.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Evaluate Resume';
+        });
+    });
+
+    feedbackForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (currentRating === 0) {
+            alert('Please select a rating before submitting feedback.');
+            return;
+        }
+
+        const formData = new FormData(feedbackForm);
+        const feedbackData = {
+            evaluation_id: formData.get('evaluation_id'),
+            rating: formData.get('rating'),
+            comments: formData.get('comments')
+        };
+
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(feedbackData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                alert('Feedback submitted successfully!');
+                feedbackForm.reset();
+                currentRating = 0;
+                stars.forEach(star => star.classList.remove('selected'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while submitting feedback.');
+        });
+    });
+});
+
+function getLevelColor(level) {
+    const colors = {
+        'Entry': 'secondary',
+        'Mid': 'info',
+        'Senior': 'primary',
+        'Lead': 'success',
+        'Manager': 'warning'
+    };
+    return colors[level] || 'secondary';
+}
+
+function getProgressionColor(progression) {
+    const colors = {
+        'Promotion': 'success',
+        'Lateral': 'warning',
+        'Step Back': 'danger'
+    };
+    return colors[progression] || 'secondary';
+}
+</script>
+{% endblock %}

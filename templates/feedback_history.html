@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Feedback History{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Feedback History</h2>
+    </div>
+    <div class="card-body">
+        {% if feedback_entries %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Resume</th>
+                            <th>Job Title</th>
+                            <th>Rating</th>
+                            <th>Comments</th>
+                            <th>Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in feedback_entries %}
+                            <tr>
+                                <td>{{ entry.filename }}</td>
+                                <td>{{ entry.job_title }}</td>
+                                <td>
+                                    <div class="star-rating">
+                                        {% for i in range(5) %}
+                                            <span class="star {% if i < entry.rating %}selected{% endif %}">★</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ entry.comments or 'No comments provided' }}</td>
+                                <td>{{ entry.submitted_at }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">No feedback has been submitted yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Add any additional JavaScript functionality here if needed
+    });
+</script>
+{% endblock %} 

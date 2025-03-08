@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluation History{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Evaluation History</h2>
+    
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    {% if evaluations %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Resume</th>
+                    <th>Job Title</th>
+                    <th>Match Score</th>
+                    <th>Missing Keywords</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eval in evaluations %}
+                <tr>
+                    <td>{{ eval.filename }}</td>
+                    <td>{{ eval.job_title }}</td>
+                    <td>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar {% if eval.match_percentage >= 70 %}bg-success{% elif eval.match_percentage >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ eval.match_percentage }}%; font-weight: bold; text-shadow: 1px 1px 1px rgba(0,0,0,0.5);" 
+                                 aria-valuenow="{{ eval.match_percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ eval.match_percentage }}%
+                            </div>
+                        </div>
+                        <div class="text-center mt-1">
+                            <small class="text-muted">{{ eval.match_percentage }}%</small>
+                        </div>
+                    </td>
+                    <td>
+                        {% if eval.missing_keywords and eval.missing_keywords|length > 0 %}
+                            <div class="missing-keywords">
+                                {% for keyword in eval.missing_keywords[:3] %}
+                                    <span class="badge bg-secondary me-1">{{ keyword }}</span>
+                                {% endfor %}
+                                {% if eval.missing_keywords|length > 3 %}
+                                    <span class="badge bg-info">+{{ eval.missing_keywords|length - 3 }} more</span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ eval.timestamp }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm view-details" 
+                                data-id="{{ eval.id }}"
+                                data-summary="{{ eval.profile_summary }}"
+                                data-job-stability="{{ eval.job_stability|tojson }}"
+                                data-career-progression="{{ eval.career_progression|tojson }}"
+                                data-technical-questions="{{ eval.technical_questions|tojson }}"
+                                data-nontechnical-questions="{{ eval.nontechnical_questions|tojson }}">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No evaluations found.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for displaying evaluation details -->
+<div class="modal fade" id="evaluationModal" tabindex="-1" aria-labelledby="evaluationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="evaluationModalLabel">Evaluation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="evalTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="true">Profile Summary</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stability-tab" data-bs-toggle="tab" data-bs-target="#stability" type="button" role="tab" aria-controls="stability" aria-selected="false">Job Stability</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="progression-tab" data-bs-toggle="tab" data-bs-target="#progression" type="button" role="tab" aria-controls="progression" aria-selected="false">Career Progression</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab" aria-controls="questions" aria-selected="false">Interview Questions</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="evalTabsContent">
+                    <div class="tab-pane fade show active" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+                        <p id="modalProfileSummary"></p>
+                    </div>
+                    <div class="tab-pane fade" id="stability" role="tabpanel" aria-labelledby="stability-tab">
+                        <div id="modalJobStability">
+                            <div class="stability-info">
+                                <p class="text-muted">Loading job stability information...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="progression" role="tabpanel" aria-labelledby="progression-tab">
+                        <div id="modalCareerProgression">
+                            <div class="career-info">
+                                <p class="text-muted">Loading career progression information...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="questions" role="tabpanel" aria-labelledby="questions-tab">
+                        <h5>Technical Questions</h5>
+                        <div id="modalTechnicalQuestions">
+                            <p class="text-muted">Loading technical questions...</p>
+                        </div>
+                        
+                        <h5 class="mt-4">Non-Technical Questions</h5>
+                        <div id="modalNontechnicalQuestions">
+                            <p class="text-muted">Loading non-technical questions...</p>
+                        </div>
+                        
+                        <h5 class="mt-4">Behavioral Questions</h5>
+                        <div id="modalBehavioralQuestions">
+                            <p class="text-muted">Loading behavioral questions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const evaluationModal = new bootstrap.Modal(document.getElementById('evaluationModal'));
+    let currentEvalId = null;
+
+    document.querySelectorAll('.view-details').forEach(button => {
+        button.addEventListener('click', function() {
+            try {
+                const evalId = this.getAttribute('data-id');
+                currentEvalId = evalId;
+                console.log('Button clicked for evaluation ID:', evalId);
+                
+                // Show loading indicators
+                document.getElementById('modalProfileSummary').textContent = "Loading...";
+                document.querySelector('#modalJobStability .stability-info').innerHTML = '<p class="text-muted">Loading job stability information...</p>';
+                document.querySelector('#modalCareerProgression .career-info').innerHTML = '<p class="text-muted">Loading career progression information...</p>';
+                document.getElementById('modalTechnicalQuestions').innerHTML = '<p class="text-muted">Loading technical questions...</p>';
+                document.getElementById('modalNontechnicalQuestions').innerHTML = '<p class="text-muted">Loading non-technical questions...</p>';
+                document.getElementById('modalBehavioralQuestions').innerHTML = '<p class="text-muted">Loading behavioral questions...</p>';
+                
+                // Show the modal while loading
+                evaluationModal.show();
+                
+                // Fetch data from API
+                fetchEvaluationDetails(evalId);
+            } catch (error) {
+                console.error('Error processing modal data:', error);
+                alert('Error loading evaluation details. Please try again.');
+            }
+        });
+    });
+    
+    function fetchEvaluationDetails(evalId) {
+        fetch(`/api/evaluation/${evalId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('API response:', data);
+                
+                // Update modal content
+                const summaryHtml = `
+                    <div class="mb-4">
+                        <h6>Profile Summary</h6>
+                        <p>${data.profile_summary || "No summary available"}</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6>Missing Keywords</h6>
+                        <div>
+                            ${Array.isArray(data.missing_keywords) && data.missing_keywords.length > 0 ? 
+                                data.missing_keywords.map(keyword => 
+                                    `<span class="badge bg-secondary me-1 mb-1">${keyword}</span>`
+                                ).join('') : 
+                                '<span class="text-muted">No missing keywords</span>'}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modalProfileSummary').innerHTML = summaryHtml;
+                
+                // Update Job Stability section
+                const jobStability = data.job_stability || {};
+                const stabilityHtml = `
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6>Stability Score</h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar ${getProgressBarColor(jobStability.StabilityScore || 0)}" 
+                                         role="progressbar" 
+                                         style="width: ${jobStability.StabilityScore || 0}%" 
+                                         aria-valuenow="${jobStability.StabilityScore || 0}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        ${jobStability.StabilityScore || 0}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <h6>Key Metrics</h6>
+                                <p><strong>Average Tenure:</strong> ${jobStability.AverageJobTenure || 'N/A'}</p>
+                                <p><strong>Total Jobs:</strong> ${jobStability.JobCount || 'N/A'}</p>
+                                <p><strong>Risk Level:</strong> <span class="badge ${getRiskLevelBadge(jobStability.RiskLevel)}">${jobStability.RiskLevel || 'N/A'}</span></p>
+                            </div>
+                            <div class="mb-3">
+                                <h6>Analysis</h6>
+                                <p>${jobStability.ReasoningExplanation || 'No analysis available.'}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                document.querySelector('#modalJobStability .stability-info').innerHTML = stabilityHtml;
+                
+                // Update Career Progression section
+                const careerProgression = data.career_progression || {};
+                const careerHtml = `
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6>Career Growth Score</h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar ${getProgressBarColor(careerProgression.progression_score || 0)}" 
+                                         role="progressbar" 
+                                         style="width: ${careerProgression.progression_score || 0}%" 
+                                         aria-valuenow="${careerProgression.progression_score || 0}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        ${careerProgression.progression_score || 0}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <h6>Career Path</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Company</th>
+                                                <th>Duration</th>
+                                                <th>Level</th>
+                                                <th>Progression</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${Array.isArray(careerProgression.career_path) && careerProgression.career_path.length > 0 ? 
+                                                careerProgression.career_path.map(job => `
+                                                    <tr>
+                                                        <td>${job.title || 'N/A'}</td>
+                                                        <td>${job.company || 'N/A'}</td>
+                                                        <td>${job.duration || 'N/A'}</td>
+                                                        <td>${job.level || 'N/A'}</td>
+                                                        <td><span class="badge ${getProgressionBadge(job.progression)}">${job.progression || 'N/A'}</span></td>
+                                                    </tr>
+                                                `).join('') : 
+                                                '<tr><td colspan="5" class="text-center">No career path data available</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <h6>Key Observations</h6>
+                                <ul>
+                                    ${Array.isArray(careerProgression.key_observations) && careerProgression.key_observations.length > 0 ? 
+                                        careerProgression.key_observations.map(obs => `<li>${obs}</li>`).join('') : 
+                                        '<li>No observations available</li>'}
+                                </ul>
+                            </div>
+                            <div class="mb-3">
+                                <h6>Areas of Concern</h6>
+                                <ul class="text-danger">
+                                    ${Array.isArray(careerProgression.red_flags) && careerProgression.red_flags.length > 0 ? 
+                                        careerProgression.red_flags.map(flag => `<li>${flag}</li>`).join('') : 
+                                        '<li>No concerns identified</li>'}
+                                </ul>
+                            </div>
+                            <div class="mb-3">
+                                <h6>Detailed Analysis</h6>
+                                <p>${careerProgression.reasoning || 'No detailed analysis available.'}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                document.querySelector('#modalCareerProgression .career-info').innerHTML = careerHtml;
+                
+                // Update Questions sections
+                updateQuestionsDisplay(data);
+            })
+            .catch(error => {
+                console.error('Error fetching evaluation details:', error);
+                alert('Error loading evaluation details. Please try again.');
+            });
+    }
+    
+    function updateQuestionsDisplay(data) {
+        const technicalQuestions = data.technical_questions || [];
+        document.getElementById('modalTechnicalQuestions').innerHTML = 
+            (Array.isArray(technicalQuestions) && technicalQuestions.length > 0) ? 
+                technicalQuestions.map((q, i) => `<p>${i + 1}. ${q}</p>`).join('') : 
+                '<p class="text-muted">No technical questions available.</p>';
+        
+        const nontechnicalQuestions = data.nontechnical_questions || [];
+        document.getElementById('modalNontechnicalQuestions').innerHTML = 
+            (Array.isArray(nontechnicalQuestions) && nontechnicalQuestions.length > 0) ? 
+                nontechnicalQuestions.map((q, i) => `<p>${i + 1}. ${q}</p>`).join('') : 
+                '<p class="text-muted">No non-technical questions available.</p>';
+        
+        const behavioralQuestions = data.behavioral_questions || [];
+        document.getElementById('modalBehavioralQuestions').innerHTML = 
+            (Array.isArray(behavioralQuestions) && behavioralQuestions.length > 0) ? 
+                behavioralQuestions.map((q, i) => `<p>${i + 1}. ${q}</p>`).join('') : 
+                '<p class="text-muted">No behavioral questions available.</p>';
+    }
+});
+
+// Helper functions for styling
+function getProgressBarColor(value) {
+    if (value >= 70) return 'bg-success';
+    if (value >= 40) return 'bg-warning';
+    return 'bg-danger';
+}
+
+function getRiskLevelBadge(riskLevel) {
+    switch (riskLevel?.toLowerCase()) {
+        case 'low': return 'bg-success';
+        case 'medium': return 'bg-warning';
+        case 'high': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function getProgressionBadge(progression) {
+    switch (progression?.toLowerCase()) {
+        case 'promotion': return 'bg-success';
+        case 'lateral': return 'bg-warning';
+        case 'step back': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+</script>
+{% endblock %} 

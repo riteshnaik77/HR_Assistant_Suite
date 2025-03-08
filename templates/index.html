@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}HR Tools Hub{% endblock %}
+
+{% block content %}
+<div class="container h-100 d-flex flex-column justify-content-center">
+    <div class="text-center mb-4">
+        <h1 class="display-4 mb-2">HR Tools Hub</h1>
+        <p class="lead text-muted">Your comprehensive HR solution powered by AI</p>
+    </div>
+    
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-6">
+            <a href="{{ url_for('hr_assistant') }}" class="text-decoration-none">
+                <div class="tile hr-assistant">
+                    <div class="tile-content">
+                        <div class="tile-icon">🤖</div>
+                        <div class="tile-title">HR Assistant</div>
+                        <div class="tile-description">
+                            Ask questions about HR policies, benefits, and company guidelines
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <a href="{{ url_for('resume_evaluator') }}" class="text-decoration-none">
+                <div class="tile resume-evaluator">
+                    <div class="tile-content">
+                        <div class="tile-icon">📄</div>
+                        <div class="tile-title">Resume Evaluator</div>
+                        <div class="tile-description">
+                            Evaluate resumes against job descriptions with AI-powered analysis
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .tile {
+        height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .tile:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .tile-content {
+        padding: 20px;
+        color: white;
+    }
+    
+    .tile-icon {
+        font-size: 3rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .tile-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .tile-description {
+        font-size: 1rem;
+        opacity: 0.9;
+        line-height: 1.4;
+    }
+    
+    .hr-assistant {
+        background: linear-gradient(135deg, var(--primary-blue), #005a94);
+    }
+    
+    .resume-evaluator {
+        background: linear-gradient(135deg, var(--primary-green), #4f5e00);
+    }
+
+    @media (max-height: 700px) {
+        .tile {
+            height: 200px;
+        }
+        
+        .tile-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tile-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .tile-description {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}

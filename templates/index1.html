@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}PeopleBot - HR Assistant{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h1 class="h2 mb-2">PeopleBot 🤖</h1>
+                        <p class="text-muted">Your AI-powered HR assistant</p>
+                    </div>
+
+                    <!-- Input Section -->
+                    <div class="mb-4">
+                        <label for="question" class="form-label">Ask a Question:</label>
+                        <textarea id="question" rows="4" class="form-control"
+                            placeholder="Ask about HR policies, benefits, or events. Enable 'Go Online' for general queries"></textarea>
+                    </div>
+                    
+                    <!-- Mode Toggle -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="online-mode">
+                            <label class="form-check-label" for="online-mode">Go Online</label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button onclick="askQuestion()" id="ask-btn" class="btn btn-primary w-100 mb-4">
+                        Ask Question
+                    </button>
+
+                    <!-- Response Section -->
+                    <div id="response" class="mt-4 d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="h5 mb-0">Response:</h3>
+                            <button onclick="copyResponse()" class="btn btn-link p-0" title="Copy response">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div id="response-content" class="border rounded p-3 bg-light"></div>
+                    </div>
+
+                    <!-- Feedback Section -->
+                    <div id="feedback-section" class="mt-4 d-none">
+                        <h4 class="h6 mb-3">Was this response helpful?</h4>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="star-rating">
+                                <span class="star" data-rating="1">★</span>
+                                <span class="star" data-rating="2">★</span>
+                                <span class="star" data-rating="3">★</span>
+                                <span class="star" data-rating="4">★</span>
+                                <span class="star" data-rating="5">★</span>
+                            </div>
+                            <textarea id="feedback-text" class="form-control" rows="2" 
+                                placeholder="Additional comments (optional)"></textarea>
+                            <button onclick="submitFeedback()" class="btn btn-success">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle pressing ENTER to submit the query
+    document.getElementById("question").addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            askQuestion();
+        }
+    });
+
+    async function askQuestion() {
+        const question = document.getElementById("question").value.trim();
+        const onlineMode = document.getElementById("online-mode").checked;
+        
+        if (question.length < 2) {
+            alert("Please provide a more detailed question.");
+            return;
+        }
+
+        const responseDiv = document.getElementById("response");
+        const responseContent = document.getElementById("response-content");
+        const feedbackSection = document.getElementById("feedback-section");
+        const askButton = document.getElementById("ask-btn");
+
+        // Show loading state
+        responseDiv.classList.remove("d-none");
+        responseContent.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span>Thinking...</span>
+            </div>
+        `;
+        askButton.disabled = true;
+        feedbackSection.classList.add("d-none");
+
+        try {
+            const response = await fetch('/api/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: question,
+                    online_mode: onlineMode
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            // Set up streaming response handling
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedResponse = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                // Decode the chunk and add it to accumulated response
+                const chunk = decoder.decode(value, { stream: true });
+                accumulatedResponse += chunk;
+
+                // Parse the accumulated response with marked and sanitize with DOMPurify
+                responseContent.innerHTML = DOMPurify.sanitize(marked.parse(accumulatedResponse));
+
+                // Scroll to the bottom of the response content
+                responseContent.scrollTop = responseContent.scrollHeight;
+            }
+
+            feedbackSection.classList.remove("d-none");
+        } catch (error) {
+            responseContent.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    An error occurred: ${error.message}
+                </div>
+            `;
+        } finally {
+            askButton.disabled = false;
+        }
+    }
+
+    function copyResponse() {
+        const responseText = document.getElementById("response-content").textContent;
+        navigator.clipboard.writeText(responseText).then(() => {
+            // Show a temporary tooltip or message
+            const copyBtn = document.querySelector('[title="Copy response"]');
+            const originalTitle = copyBtn.getAttribute('title');
+            copyBtn.setAttribute('title', 'Copied!');
+            setTimeout(() => copyBtn.setAttribute('title', originalTitle), 2000);
+        });
+    }
+
+    // Star rating functionality
+    document.querySelectorAll('.star').forEach(star => {
+        star.addEventListener('mouseover', function() {
+            const rating = this.dataset.rating;
+            document.querySelectorAll('.star').forEach(s => {
+                s.style.color = s.dataset.rating <= rating ? '#f6c000' : '#ccc';
+            });
+        });
+
+        star.addEventListener('click', function() {
+            const rating = this.dataset.rating;
+            document.querySelectorAll('.star').forEach(s => {
+                if (s.dataset.rating <= rating) {
+                    s.classList.add('selected');
+                } else {
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+
+    document.querySelector('.star-rating').addEventListener('mouseleave', function() {
+        document.querySelectorAll('.star').forEach(star => {
+            star.style.color = star.classList.contains('selected') ? '#f6c000' : '#ccc';
+        });
+    });
+
+    async function submitFeedback() {
+        const selectedRating = document.querySelectorAll('.star.selected').length;
+        const feedbackText = document.getElementById("feedback-text").value.trim();
+        const question = document.getElementById("question").value.trim();
+
+        if (selectedRating === 0) {
+            alert('Please select a rating before submitting feedback.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: question,
+                    rating: selectedRating,
+                    feedback: feedbackText
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP error! Status: ${response.status}`);
+            }
+
+            // Clear feedback form and show success message
+            document.getElementById("feedback-text").value = '';
+            document.querySelectorAll('.star').forEach(star => {
+                star.classList.remove('selected');
+                star.style.color = '#ccc';
+            });
+
+            alert('Thank you for your feedback!');
+            document.getElementById("feedback-section").classList.add("d-none");
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error submitting feedback: ' + error.message);
+        }
+    }
+</script>
+
+<style>
+    .star-rating {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .star {
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: #ccc;
+        transition: color 0.2s ease;
+    }
+
+    .star.selected {
+        color: #f6c000;
+    }
+
+    .markdown-content {
+        line-height: 1.6;
+    }
+
+    .markdown-content p:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
