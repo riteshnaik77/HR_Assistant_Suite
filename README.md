@@ -65,7 +65,7 @@ python app.py
 
 1. Start the server:
 ```bash
-python app.py
+python run.py
 ```
 
 2. Access the application at `http://localhost:5000`
@@ -99,8 +99,8 @@ python app.py
 
 ## License
 
-[Your chosen license]
+apache2.0
 
 ## Contact
 
-[Your contact information]
+[riteshnaik77@gmail.com]
