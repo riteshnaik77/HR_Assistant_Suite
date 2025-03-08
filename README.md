@@ -33,7 +33,7 @@ A comprehensive web application designed to streamline HR processes, particularl
 
 1. Clone the repository:
 ```bash
-git clone [your-repository-url]
+git clone https://github.com/riteshnaik77/HR_Assistant_Suite.git
 cd hr-assistant-suite
 ```
 
