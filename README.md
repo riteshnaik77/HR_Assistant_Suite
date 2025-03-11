@@ -58,7 +58,7 @@ GEMINI_API_KEY=your_gemini_api_key
 
 5. Initialize the database:
 ```bash
-python app.py
+python run.py
 ```
 
 ## Usage
